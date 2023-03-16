@@ -22,7 +22,7 @@ fi
 commonname=$(printf '%q' "$1")
 v2rayuuid=$(cat /proc/sys/kernel/random/uuid)
 numbers=(11 13 17 19 23 29 31 37 41 43 47 53 59 61 67 71 73 79 83 89 97)
-websocketaddress="${numbers[$RANDOM % ${#numbers[@]}]}.${numbers[$RANDOM % ${#numbers[@]}]}"
+websocketaddress="${numbers[$RANDOM % ${#numbers[@]}]}.${numbers[$RANDOM % ${#numbers[@]}]}.${numbers[$RANDOM % ${#numbers[@]}]}.${numbers[$RANDOM % ${#numbers[@]}]}"
 
 mkdir -p /etc/nginx/ssl
 openssl genrsa -out /etc/nginx/ssl/private.key 2048
@@ -49,7 +49,7 @@ cat > /usr/local/etc/v2ray/config.json << EOF
       "streamSettings": {
         "network": "ws",
         "wsSettings": {
-        "path": "/WS-VMESS/$websocketaddress"
+        "path": "/$websocketaddress"
         }
       }
     }
@@ -89,6 +89,13 @@ server {
 	ssl_session_timeout 1d;
 	ssl_session_cache shared:SSL:30m;
 	ssl_session_tickets off;
+	
+	location /{
+		proxy_redirect off;
+		proxy_pass https://sci-hub.hkvisa.net;
+		proxy_ssl_server_name on;
+		proxy_set_header Host "sci-hub.hkvisa.net";
+    	}
 
 	location /WS-VMESS/$websocketaddress {
 		if (\$http_upgrade != "websocket") {

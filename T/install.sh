@@ -4,7 +4,8 @@ start_menu(){
 	echo -e "\033[32m\033[01m2.Install trojan\033[0m"
 	echo -e "\033[32m\033[01m3.Install xui\033[0m"
 	echo -e "\033[32m\033[01m4.Add websocket for trojan-go\033[0m"
-    case "$num" in
+	read -p $'\033[32m\033[01mPlease choose an option: \033[0m' option
+    case "$option" in
 		1)
 		kernel_install	
 		;;
@@ -15,7 +16,7 @@ start_menu(){
 		xui_install
 		;;
 		4)
-		xui_install
+		add_websocket
 		;;
 		*)
 		start_menu
