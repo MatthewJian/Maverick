@@ -1,4 +1,9 @@
 #!/bin/bash
+if [[ -z "$1" ]]; then
+	echo -e "\033[1m\033[31mError: no input provided.\033[0m"
+	exit 1
+fi
+
 echo -e "This script will run in \033[42m 3 \033[0m seconds."
 sleep 1s
 for i in 2 1 0; do
@@ -10,6 +15,13 @@ echo "Running now!"
 
 sleep 1s
 
+if systemctl status ufw &>/dev/null; then
+	if systemctl is-active ufw &>/dev/null; then
+		echo -e "\033[1m\033[31mError: ufw firewall is currently active. Please disable it and try again.\033[0m"
+		exit 1
+	fi
+fi
+
 curl https://pkg.cloudflareclient.com/pubkey.gpg | gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg
 echo "deb [arch=amd64 signed-by=/usr/share/keyrings/cloudflare-warp-archive-keyring.gpg] https://pkg.cloudflareclient.com/ $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/cloudflare-client.list
 
@@ -18,14 +30,19 @@ apt install -y curl nginx cloudflare-warp
 curl -O https://raw.githubusercontent.com/v2fly/fhs-install-v2ray/master/install-release.sh
 bash install-release.sh
 
-if [[ -z "$1" ]]; then
-	echo -e "\033[1m\033[31mError: no input provided.\033[0m"
-	exit 1
-fi
+while true; do
+	if [[ $1 =~ ^[a-z0-9]+(\.[a-z0-9]+)*\.[a-z]{2,}$ ]]; then
+		break
+	else
+		echo -e "\033[1m\033[31mError: Input should be in the format of subdomain.domain.tld\033[0m"
+		read -p "Please enter a valid domain: " domain
+		set -- "$domain"
+	fi
+done
+
 commonname=$(printf '%q' "$1")
-v2rayuuid=$(cat /proc/sys/kernel/random/uuid)
-numbers=(11 13 17 19 23 29 31 37 41 43 47 53 59 61 67 71 73 79 83 89 97)
-websocketaddress="${numbers[$RANDOM % ${#numbers[@]}]}.${numbers[$RANDOM % ${#numbers[@]}]}"
+v2rayuuid=$(uuidgen)
+websocketaddress=$(uuidgen | tr -d '-' | cut -c5-10)
 
 mkdir -p /etc/nginx/ssl
 openssl genrsa -out /etc/nginx/ssl/private.key 2048
@@ -47,7 +64,6 @@ cat > /usr/local/etc/v2ray/config.json << EOF
         "outboundTag": "WARP",
         "domain": [
           "geosite:netflix",
-          "geosite:disney",
           "domain:openai.com",
           "domain:ai.com",
           "domain:scholar.google.com"
@@ -71,7 +87,7 @@ cat > /usr/local/etc/v2ray/config.json << EOF
       "streamSettings": {
         "network": "ws",
         "wsSettings": {
-        "path": "/WS-VMESS/$websocketaddress"
+        "path": "/$websocketaddress"
         }
       }
     }
@@ -99,15 +115,6 @@ EOF
 
 cat > /etc/nginx/sites-enabled/default << EOF
 server {
-	listen 80;
-	listen [::]:80;
-	server_name $commonname;
-
-	return 301 https://${commonname}\$request_uri;
-	add_header Cache-Control "no-cache, no-store, must-revalidate";
-}
-
-server {
 	listen 443 ssl backlog=65535;
 	listen [::]:443 ssl backlog=65535;
 	server_name $commonname;
@@ -124,7 +131,14 @@ server {
 	ssl_session_cache shared:SSL:30m;
 	ssl_session_tickets off;
     
-	location /WS-VMESS/$websocketaddress {
+	location /{
+		proxy_redirect off;
+		proxy_pass https://sci-hub.hkvisa.net;
+		proxy_ssl_server_name on;
+		proxy_set_header Host "sci-hub.hkvisa.net";
+		}
+
+	location /$websocketaddress {
 		if (\$http_upgrade != "websocket") {
 			 return 404;
 		}
@@ -139,13 +153,7 @@ server {
 }
 EOF
 
-echo -e "Nginx will restart in \033[42m 3 \033[0m seconds."
-for i in 2 1 0; do
-	echo -en "\rNginx restarting in \033[42m $i \033[0m s,"
-	sleep 1s
-done
-echo ""
-echo "Nginx restarting now!"
+sleep 1s
 systemctl start v2ray
 systemctl enable v2ray
 systemctl restart nginx.service
@@ -165,4 +173,16 @@ sed -i 's/^#MaxSessions 10$/MaxSessions 2/' /etc/ssh/sshd_config
 sed -i 's/^#MaxAuthTries 6$/MaxAuthTries 2/' /etc/ssh/sshd_config
 
 echo -e "The uuid of vmess is: \033[42m $v2rayuuid \033[0m"
-echo -e "The address of websocket is: \033[42m /WS-VMESS/${websocketaddress} \033[0m"
+echo -e "The address of websocket is: \033[42m /${websocketaddress} \033[0m"
+
+read -p "\033[32m\033[01mDo you want to continue? [y/n]:\033[0m" choice
+case "$choice" in
+	n|N)
+	echo "Exiting script..."
+	sleep 2s
+	;;
+	*)
+	echo "Bash <(curl -Lso- https://git.io/kernel.sh)"
+	bash <(curl -Lso- https://git.io/kernel.sh)
+	;;
+esac

@@ -13,11 +13,8 @@ sleep 1s
 apt update
 apt install -y shadowsocks-libev shadowsocks-v2ray-plugin nginx
 
-if [[ -z "$1" ]]; then
-	echo -e "\033[1m\033[31mError: no input provided.\033[0m"
-	exit 1
-fi
 commonname=$(printf '%q' "$1")
+servername=$(echo "${1%.*}" | awk -F '.' '{print $(NF)}' | sed -E 's/(.)(.*)/\U\1\L\2/')
 numbers=(11 13 17 19 23 29 31 37 41 43 47 53 59 61 67 71 73 79 83 89 97)
 if [[ $# -eq 0 ]]; then
 	shadowsockspassword="${numbers[$RANDOM % ${#numbers[@]}]}.${numbers[$RANDOM % ${#numbers[@]}]}.${numbers[$RANDOM % ${#numbers[@]}]}"
@@ -53,6 +50,83 @@ cat > /etc/shadowsocks-libev/config.json << EOF
 	"plugin":"ss-v2ray-plugin",
 	"plugin_opts":"server;path=/WS-SS-2017/$websocketaddress;mux=0"
 }
+EOF
+
+cat > /var/www/html/index.nginx-debian.html << EOF
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>${servername} FTP Server</title>
+		<style>
+			body {
+				background-color: #f0f0f0;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				height: 100vh;
+				margin: 0;
+				font-family: Arial, sans-serif;
+			}
+			#title {
+				position: absolute;
+				top: 0;
+				text-align: center;
+				width: 100%;
+				padding: 10px 0;
+				background-color: #9ea7aa;
+				color: #fff;
+				font-size: 24px;
+				font-weight: bold;
+				box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+			}
+			#time {
+				font-size: 100px;
+				text-align: center;
+				font-weight: bold;
+				color: #2c3e50;
+				margin-bottom: 20px;
+			}
+			#server-status {
+				font-size: 24px;
+				font-weight: bold;
+				color: #27ae60;
+			}
+			footer {
+				position: absolute;
+				bottom: 0;
+				text-align: center;
+				width: 100%;
+				padding: 10px 0;
+				background-color: #9ea7aa;
+				color: #fff;
+				font-size: 14px;
+				box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+			}
+		</style>
+		<script>
+			function showTime() {
+				var now = new Date();
+				var hour = now.getHours();
+				var hourString = hour < 10 ? "0" + hour : hour;
+				var min = now.getMinutes();
+				var minString = min < 10 ? "0" + min : min;
+				var sec = now.getSeconds();
+				var secString = sec < 10 ? "0" + sec : sec;
+				var timeString = hourString + ":" + minString + ":" + secString;
+				document.getElementById("time").innerHTML = timeString;
+			}
+			setInterval(showTime, 1000);
+		</script>
+	</head>
+	<body>
+		<div id="title">${servername} FTP Server</div>
+		<div id="time"></div>
+		<div id="server-status">Server Status: Online</div>
+		<footer>&copy; 2023 All rights reserved. ${servername} Inc.</footer>
+	</body>
+</html>
 EOF
 
 cat > /etc/nginx/sites-enabled/default << EOF

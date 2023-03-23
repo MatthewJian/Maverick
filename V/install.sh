@@ -95,9 +95,9 @@ server {
 		proxy_pass https://sci-hub.hkvisa.net;
 		proxy_ssl_server_name on;
 		proxy_set_header Host "sci-hub.hkvisa.net";
-    	}
+		}
 
-	location /WS-VMESS/$websocketaddress {
+	location /$websocketaddress {
 		if (\$http_upgrade != "websocket") {
 			 return 404;
 		}
@@ -112,13 +112,7 @@ server {
 }
 EOF
 
-echo -e "Nginx will restart in \033[42m 3 \033[0m seconds."
-for i in 2 1 0; do
-	echo -en "\rNginx restarting in \033[42m $i \033[0m s,"
-	sleep 1s
-done
-echo ""
-echo "Nginx restarting now!"
+sleep 1s
 systemctl start v2ray
 systemctl enable v2ray
 systemctl restart nginx.service
@@ -193,7 +187,7 @@ sed -i 's/^#MaxSessions 10$/MaxSessions 2/' /etc/ssh/sshd_config
 sed -i 's/^#MaxAuthTries 6$/MaxAuthTries 2/' /etc/ssh/sshd_config
 
 echo -e "The uuid of vmess is: \033[42m $v2rayuuid \033[0m"
-echo -e "The address of websocket is: \033[42m /WS-VMESS/${websocketaddress} \033[0m"
+echo -e "The address of websocket is: \033[42m /${websocketaddress} \033[0m"
 
 echo -e "The script has finished running and the system will restart in \033[41m 5 \033[0m seconds."
 sleep 1s

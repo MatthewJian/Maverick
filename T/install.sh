@@ -2,9 +2,8 @@
 start_menu(){
 	echo -e "\033[32m\033[01m1.Install kernel\033[0m"
 	echo -e "\033[32m\033[01m2.Install trojan\033[0m"
-	echo -e "\033[32m\033[01m3.Install xui\033[0m"
 	echo -e "\033[32m\033[01m4.Add websocket for trojan-go\033[0m"
-	read -p $'\033[32m\033[01mPlease choose an option: \033[0m' option
+	read -p $'\033[34m\033[01mPlease choose an option: \033[0m' option
     case "$option" in
 		1)
 		kernel_install	
@@ -13,9 +12,6 @@ start_menu(){
 		trojan_install		
 		;;
 		3)
-		xui_install
-		;;
-		4)
 		add_websocket
 		;;
 		*)
@@ -25,15 +21,13 @@ start_menu(){
 }
 
 kernel_install(){
-    bash <(curl -Lso- https://git.io/kernel.sh)
+	echo "bash <(curl -Lso- https://git.io/kernel.sh)"
+	bash <(curl -Lso- https://git.io/kernel.sh)
 }
 
 trojan_install(){
-    bash <(curl -sL https://git.io/trojan-install)
-}
-
-xui_install(){
-    bash <(curl -Ls https://raw.githubusercontent.com/vaxilu/x-ui/master/install.sh)
+	echo "bash <(curl -sL https://git.io/trojan-install)"
+	bash <(curl -sL https://git.io/trojan-install)
 }
 
 add_websocket(){
