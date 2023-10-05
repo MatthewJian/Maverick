@@ -25,12 +25,15 @@ numbers=(11 13 17 19 23 29 31 37 41 43 47 53 59 61 67 71 73 79 83 89 97)
 websocketaddress="${numbers[$RANDOM % ${#numbers[@]}]}.${numbers[$RANDOM % ${#numbers[@]}]}.${numbers[$RANDOM % ${#numbers[@]}]}.${numbers[$RANDOM % ${#numbers[@]}]}"
 
 mkdir -p /etc/nginx/ssl
-openssl genrsa -out /etc/nginx/ssl/private.key 2048
-chmod 600 /etc/nginx/ssl/private.key
-openssl req -new -key /etc/nginx/ssl/private.key -out /etc/nginx/ssl/certificate.csr -subj "/CN=${commonname}"
-openssl x509 -req -days 800 -in /etc/nginx/ssl/certificate.csr -signkey /etc/nginx/ssl/private.key -out /etc/nginx/ssl/certificate.crt
-rm /etc/nginx/ssl/certificate.csr
+apt-get update && apt-get install -y curl socat cron lsof
+systemctl enable --now cron
+curl https://get.acme.sh | sh -s email=$(date +%s%N | md5sum | cut -c 1-16)@gmail.com
+~/.acme.sh/acme.sh --set-default-ca --server buypass
+lsof -i:"80" | awk 'NR>1 {print $2}' | xargs -r kill -9
+~/.acme.sh/acme.sh --issue -d ${commonname} --standalone
+acme.sh --install-cert -d ${commonname} --key-file /etc/nginx/ssl/private.pem --fullchain-file /etc/nginx/ssl/certificate.pem --reloadcmd "service nginx force-reload"
 
+    
 cat > /usr/local/etc/v2ray/config.json << EOF
 {
   "inbounds": [
@@ -81,9 +84,9 @@ server {
 	root /var/www/html;
 	index index.html index.htm index.nginx-debian.html;
 	
-	ssl_certificate /etc/nginx/ssl/certificate.crt;
-	ssl_certificate_key /etc/nginx/ssl/private.key;
-	ssl_protocols TLSv1.1 TLSv1.2;
+	ssl_certificate /etc/nginx/ssl/certificate.pem;
+	ssl_certificate_key /etc/nginx/ssl/private.pem;
+	ssl_protocols TLSv1.2 TLSv1.3;
 	ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-CHACHA20-POLY1305;
 	ssl_prefer_server_ciphers on;
 	ssl_session_timeout 1d;

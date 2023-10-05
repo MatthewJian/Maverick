@@ -1,5 +1,5 @@
 ```bash
-bash <(wget --no-check-certificate -qO- 'https://raw.githubusercontent.com/MatthewJian/MoeClub-Note-Fork/master/InstallNET.sh') -d 11 -v 64 -p "fxb3ap5y5ikXHLktMeiBKc1Hr1f0Bja28oeFj52BkEkt3aiC" -port "31267"
+bash <(wget --no-check-certificate -qO- 'https://raw.githubusercontent.com/MatthewJian/Linux-Reinstall/master/Linux_reinstall/InstallNET.sh') -debian 12 -version 64 -port "36709" -pwd "Azs3wsj6u8" -mirror "http://ftp.us.debian.org/debian/" -timezone "America/New_York"
 ```
 
 ```bash
