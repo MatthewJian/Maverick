@@ -21,7 +21,7 @@ cat > /usr/local/etc/v2ray/config.json << EOF
 {
 	"inbounds": [
 		{
-            "listen": "0.0.0.0",
+			"listen": "0.0.0.0",
 			"port": $shadowsocksport,
 			"protocol": "shadowsocks",
 			"settings": {
@@ -42,18 +42,37 @@ cat > /usr/local/etc/v2ray/config.json << EOF
 						"method": "aes-128-gcm",
 						"password": "SS-WS-2017@$shadowsockspassword2!"
 					}
-                ]
-            },
-            "streamSettings": {
-                "network": "ws",
-                "security": "tls",
-                "wsSettings": {
-                    "path": "/WS-SS-2017/$websocketaddress"
-                }
-            },
-            "tag": "proxy"
-        }
-    ]
+				]
+			},
+			"streamSettings": {
+				"network": "ws",
+				"security": "tls",
+				"wsSettings": {
+					"path": "/WS-SS-2017/$websocketaddress"
+				}
+			},
+			"tag": "proxy"
+		},
+		{
+			"protocol": "blackhole",
+			"settings": {},
+			"tag": "block"
+		}
+	],
+	"routing": {
+		"domainStrategy": "IPOnDemand",
+		"strategy": "rules",
+		"rules": [
+			{
+				"type": "field",
+				"ip": [
+					"geoip:private",
+					"geoip:cn"
+				],
+				"outboundTag": "block"
+			}
+		]
+	}
 }
 EOF
 
